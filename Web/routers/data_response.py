@@ -18,12 +18,12 @@ router = APIRouter()
 
 def get_current_log(resource_type) :
     table = resource.Table(resource_type)
-        # 현재 시간 가져오기
+    # 현재 시간 가져오기
     # 현재 시간 가져오기
     current_time = time.time()  # 현재 Unix Timestamp
 
     # 타임스탬프 범위 설정 (예: 최근 1시간 데이터)
-    start_time = Decimal(str(int(current_time - (60 * 60 * 300))))  # 1시간 전
+    start_time = Decimal(str(int(current_time - (60 * 60 * 300))))  # 300시간 전
     end_time = Decimal(str(int(current_time)))               # 현재 시간
 
     response = table.scan(
@@ -45,6 +45,7 @@ def get_current_process(resource_type) :
     response = table.scan(
         FilterExpression=Attr('sort_key').between(start_time, end_time)
     )
+
     sorted_items = sorted(response['Items'], key=lambda x: x['sort_key'])[-1]
 
     return sorted_items
@@ -57,16 +58,18 @@ def convert_unix_to_korean_time(unix_timestamp):
     korean_time = datetime.fromtimestamp(unix_timestamp, tz=timezone.utc) + timedelta(hours=9)
     return korean_time.strftime('%Y-%m-%d %H:%M:%S')  # 초까지 포함
 
-def get_cpu() :
+def get_cpu():
     data = get_current_log("resource_1")
+    print("Fetched data from DynamoDB:", data)  # 디버깅 로그
     cpu_usage = []
     time_stamp = []
-    for i in data : 
-        cpu_usage.append(i['cpu_percent'])
+    for i in data:
+        if 'cpu_percent' not in i or 'time_stamp' not in i:
+            print(f"Skipping item due to missing keys: {i}")
+            continue
+        cpu_usage.append(float(i['cpu_percent']))
         time_stamp.append(convert_unix_to_korean_time(i['time_stamp']))
-        #print(cpu_usage, time_stamp)
-
-    return [float(x) for x in cpu_usage], time_stamp 
+    return cpu_usage, time_stamp
 
 def get_process() :
     data = get_current_process("resource_1_process")
@@ -95,7 +98,6 @@ async def get_chart_data():
 
 @router.get("/process_response")
 async def get_pie_data():
-
     percent, p_name = get_process()
     return {
         "labels": p_name,
