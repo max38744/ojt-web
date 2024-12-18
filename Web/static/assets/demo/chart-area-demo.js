@@ -1,36 +1,61 @@
-// Set new default font family and font color to mimic Bootstrap's default styling
-Chart.defaults.global.defaultFontFamily = '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
-Chart.defaults.global.defaultFontColor = '#292b2c';
+// UNIX time을 한국시간으로 변환하는 함수
+function convertUnixToKoreanTime(unixTime) {
+  const date = new Date(unixTime * 1000); // UNIX time을 밀리초로 변환
+  const koreanOffset = 9 * 60 * 60 * 1000; // UTC+9 시간 (밀리초)
+  const koreanTime = new Date(date.getTime() + koreanOffset);
 
-// 서버에서 데이터를 가져오는 함수
-async function fetchChartData() {
+  // 한국시간을 'YYYY-MM-DD HH:mm:ss' 형식으로 변환
+  const year = koreanTime.getFullYear();
+  const month = String(koreanTime.getMonth() + 1).padStart(2, '0');
+  const day = String(koreanTime.getDate()).padStart(2, '0');
+  const hours = String(koreanTime.getHours()).padStart(2, '0');
+  const minutes = String(koreanTime.getMinutes()).padStart(2, '0');
+  const seconds = String(koreanTime.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// Dictionary 자료형 생성
+const timeDictionary = {};
+let myLineChart;
+
+async function fetchChartData(url) {
   try {
-    const response = await fetch('/data_response'); // 서버 엔드포인트로 요청
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
-    const data = await response.json(); // JSON 형식으로 데이터 파싱
-    return data; // 데이터를 반환
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error fetching chart data:', error);
     return null;
   }
 }
 
-
-// Area Chart Example
 async function renderChart() {
   const ctx = document.getElementById("myAreaChart");
 
-  // 서버로부터 데이터 가져오기
-  const chartData = await fetchChartData();
+  const url = `/data_response?resource=${encodeURIComponent(ResourceManager.getResource())}`;
+  const chartData = await fetchChartData(url);
+  console.log("Chart data:", chartData);
 
-  // 서버에서 데이터가 정상적으로 받아진 경우만 차트 렌더링
   if (chartData) {
-    const myLineChart = new Chart(ctx, {
+    if (myLineChart) {
+      myLineChart.destroy();
+    }
+
+    const utc_label = [];
+    chartData.labels.forEach((unixTime) => {
+      const koreanTime = convertUnixToKoreanTime(unixTime); // 한국시간으로 변환
+      utc_label.push(koreanTime);
+      timeDictionary[koreanTime] = unixTime; // 변환된 값을 저장
+    });
+
+    myLineChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: chartData.labels, // 서버에서 받은 라벨 데이터
+        labels: utc_label,
         datasets: [{
           label: "Sessions",
           lineTension: 0.3,
@@ -43,38 +68,45 @@ async function renderChart() {
           pointHoverBackgroundColor: "rgba(2,117,216,1)",
           pointHitRadius: 50,
           pointBorderWidth: 2,
-          data: chartData.values, // 서버에서 받은 데이터 값
+          data: chartData.values,
         }],
       },
       options: {
         scales: {
           xAxes: [{
-            time: {
-              unit: 'date'
-            },
-            gridLines: {
-              display: false
-            },
-            ticks: {
-              maxTicksLimit: 7
-            }
+            time: { unit: 'date' },
+            gridLines: { display: false },
+            ticks: { maxTicksLimit: 7 },
           }],
           yAxes: [{
-            ticks: {
-              min: 0,
-              max: 100,
-              maxTicksLimit: 5
-            },
-            gridLines: {
-              color: "rgba(0, 0, 0, .125)",
-            }
+            ticks: { min: 0, max: 100, maxTicksLimit: 5 },
+            gridLines: { color: "rgba(0, 0, 0, .125)" },
           }],
         },
-        legend: {
-          display: false
-        }
-      }
+        legend: { display: false },
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const elementIndex = elements[0]._index; // 최신 Chart.js 버전에 맞게 수정
+            const label = timeDictionary[utc_label[elementIndex]];
+            console.log(label);
+            console.log("utc_label", utc_label);
+            console.log("이벤트 요소 : ",elements);
+            const value = chartData.values[elementIndex];
+
+            console.log('Clicked data point:', { label, value });
+
+            if (typeof updateChartData === "function") {
+              updateChartData(label, value);
+              updateBarChart(label, value);
+            } else {
+              console.error("updateChartData or updateBarChart not defined.");
+            }
+          }
+        },
+      },
     });
+  } else {
+    console.error("Chart data is not available.");
   }
 }
 

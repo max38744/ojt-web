@@ -11241,3 +11241,24 @@ body {
   font-size: 0.75rem;
   border-radius: 0.375rem !important;
 }
+
+/* 드롭다운 메뉴 컨테이너 */
+.navbar .form-inline {
+  position: relative; /* 부모 요소에 상대 위치 지정 */
+  z-index: 10; /* 다른 요소 위로 올라오도록 설정 */
+}
+
+/* 드롭다운 스타일 */
+#resourceSelector {
+  position: absolute; /* 드롭다운을 부모 요소에 대해 절대 위치 */
+  top: 12%; /* 부모 요소의 중앙에 배치 */
+  right: 0; /* 우측 정렬 */
+  width: 150px; /* 원하는 너비 설정 */
+  transform: translateY(-50%); /* 수직 정렬 보정 */
+  z-index: 999; /* 다른 요소 위로 올라오도록 높은 값 설정 */
+  background-color: #fff; /* 배경색 설정 */
+  border: 1px solid #ccc; /* 테두리 설정 */
+  border-radius: 5px; /* 둥근 테두리 */
+  padding: 5px 10px;
+  margin-left: 10px; /* 다른 요소와의 여백 설정 */
+}
