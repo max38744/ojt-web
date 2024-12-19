@@ -138,8 +138,8 @@ async def get_chart_data(resource : str):
     logger.info(f"Received resource: {resource}")
     usage, time_stamp = get_cpu(resource)
     return {
-        "labels": time_stamp,
-        "values": usage,
+        "labels": time_stamp[:20],
+        "values": usage[:20],
     }
 
 

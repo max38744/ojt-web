@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${item.time_stamp ?? 'N/A'}</td>
-                <td>${index + 1}</td>
                 <td>${item.cpu_percent ?? 'N/A'}</td>
                 <td>${item.ram_percent ?? 'N/A'}</td>
                 <td>${item.read_bytes ?? 'N/A'}</td>
