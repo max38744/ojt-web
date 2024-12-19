@@ -63,7 +63,7 @@ async function renderBarChart(chartData) {
           yAxes: [{
             ticks: {
               min: 0,
-              max: Math.max(...chartData.values) || 100, // 데이터 값 기반으로 y축 최대값 설정
+              max: 100, // 데이터 값 기반으로 y축 최대값 설정
               maxTicksLimit: 5
             },
             gridLines: {
